@@ -9,3 +9,7 @@
 **/mvnw
 **/mvnw.cmd
 **/rebel.xml
+
+# 前端
+**/build/
+**/node_modules/
