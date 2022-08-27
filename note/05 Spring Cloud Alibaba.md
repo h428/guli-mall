@@ -63,7 +63,13 @@ Spring Cloud Alibaba  的优势：
 ```xml
 <dependencyManagement>
   <dependencies>
-    <!--spring cloud-->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-dependencies</artifactId>
+      <version>2.1.13.RELEASE</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
     <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-dependencies</artifactId>
