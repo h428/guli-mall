@@ -74,6 +74,10 @@ startup.cmd -m standalone
 
 # nacos 作为配置中心
 
+
+
+
+
 ## 配置流程
 
 根据[官方文档](https://github.com/alibaba/spring-cloud-alibaba/blob/2.2.x/spring-cloud-alibaba-examples/nacos-example/nacos-config-example/readme-zh.md)，nacos 做为配置中心大致需要做如下配置，我们以 mall-coupon 为例进行介绍：
@@ -125,15 +129,76 @@ nacos-config-client 在连接 nacos 读取配置时，会根据 group 和 dataId
 
 启动服务，验证服务成功启动，之后对所有微服务做同样更改，将配置移到配置中心中。
 
-## nacos-client 寻找配置文件原则
 
-nacos-config-client 寻找的 dataId 拼接格式为 `${prefix} - ${spring.profiles.active} . ${file-extension}`，如果 `prefix` 未配置则默认和 `spring.application.name` 一致，`spring.profiles.active` 未配置则无特殊环境，若配置了会读取公共配置和对应环境的配置，`file-extension` 未配置默认则为 properties，配置了则使用指定类型的配置文件。`group` 未配置则默认为 DEFAULT_GROUP。注意配置的 dataId 要代上后缀名，否则可能找不到。
+## nacos 中配置文件的关键概念
 
-故根据上述原则，我们的 mall-coupon 服务在连接 nacos 后读取的配置为 DEFAULT_GROUP 组下的 mall-coupon.yml。
+将 nacos 做为配置中心时，我们会在 nacos 中创建配置文件，各个微服务不再保留自身的 application.yml，而是只保留最基本的配置并写在 bootstrap.yml 中，而其他配置均从 nacos 的配置文件中读取。
+
+对于 nacos 中的配置文件，有三个关键概念需要掌握，分别是命名空间、group 和 dataId，客户端会基于这三个配置的值定位到指定的配置文件。
+
+### 命名空间
+
+对于在 nacos 中创建的配置文件，都可以指定一个归属的命名空间，命名空间用于配置的隔离，默认命名空间为 public，在对应命名空间下创建的配置文件即归属对应的命名空间。
+
+在 nacos 客户端，可以在 bootstrap.yml 中使用配置项 `spring.cloud.nacos.config.namespace` 配置要采用的命名空间，该配置需要填写的值为命名空间的 uuid，若没有配置默认值为 public。此外还可以结合 spring.profile.active 进行配置，在不同的 active 环境配置不同的 namespace 达到切换 spring 环境自动采用不同 namespace 配置的效果。
+
+命名空间主要有下列应用方案：
+- 命名空间可以用于环境的隔离，例如开发、测试、生成环境可以创建不同的命名空间并引入不同的配置，
+- 如果服务众多，每个服务下也有较多配置，命名空间也可以用作各个服务间配置的隔离，例如每个服务有自己的命名空间，各个微服务只引用自己命名空间的策略。
+
+需要注意的事，每次微服务启动时只可以引用一个命名空间，因此如果多个命名空间下有重复的公共配置，是必须拷贝一份配置到各个命名空间下的，而无法通过引用公共配置的方式来引入，因为它们分属不同的命名空间。
+
+出于便捷考虑以及公共配置的需要，本项目我们就不基于命名空间区分配置，而是统一采用 public 命名空间，基于 dataId 的 `-dev/-test/-prod` 之类的后缀来区分环境。
+
+### group
+
+对于在 nacos 中创建的配置文件，都可以在创建时指定自己所属的分组，默认值为 DEFAULT_GROUP。分组也可用于配置的隔离，但一般可能会应用于不同场景下的配置区分，然后在不同所需的场景启用不同的分组，以引入不同的配置文件。
+
+在 nacos 客户端，可以在 bootstrap.yml 中使用配置项 `spring.cloud.nacos.config.group` 来指定当前微服务需要使用的分组，若不配置默认值为 DEFAULT_GROUP。
+
+
+### dataId
+
+对于在 nacos 中创建的配置文件，在创建时可以指定一个 dataId，其相当于配置文件的完整文件名，实际上会包括文件名、spring 环境和文件扩展名三个部分。
+
+在 nacos starter 客户端，和 dataId 相关的配置主要包括前缀 `${prefix}`, 环境 `${spring.profiles.active}` 和文件扩展名 `${file-extension}`
+- nacos starter 客户端在连接到 nacos 并查找配置文件时，会基于这三个配置拼接出 dataId，dataId 的拼接规则为：`${prefix}-${spring.profiles.active}.${file-extension}`
+- `prefix`：使用配置项 `spring.cloud.nacos.config.prefix` 进行配置，若不配置默认值为 `spring.application.name`，因此我们一般直接配置 `spring.application.name` 并让 dataId 的文件名部分和应用名一致。
+- `spring.profiles.active`：spring boot 环境，若没有指定则确定 dataId 时没有当前部分，当然也会没有前缀那个 `-`
+- `file-extension`：文件扩展名，使用 `spring.cloud.nacos.config.file-extension` 进行配置，未配置默认则为 properties
+
+### nacos starter 确定配置文件流程
+
+
+nacos starter 首先会根据 bootstrap 文件中的配置确定需要获取配置的 namespace, group 和 dataId，其会根据 `spring.cloud.nacos.config.namespace` 确定 namespace，根据 `spring.cloud.nacos.config.group` 确定 group，根据 `spring.cloud.nacos.config.prefix`, `spring.profiles.active` 和 `file-extension` 确定 dataId，然后去 `spring.cloud.nacos.config.server-addr` 指定的服务器中查找到可用的配置文件，作为本次启动的配置。
+
+需要注意 spring boot 环境部分的配置，不管是否配置 spring boot 环境，基本的不带环境的 dataId 所对应的配置文件都是会被读取的，且如果有相同配置会被带环境的配置覆盖。其基本思路和 spring boot 的多环境配置是一致的。
+
+举个例子，假设对 mall-product 微服务采用 dev 环境配置，配置文件为 yml 格式，分两步：
+- 首先，在 nacos 中创建配置文件，namespace 和 group 均采用默认值无需配置，dataId 则配置为 `mall-product-dev.yml`（需要注意在指定 dataId 时需要配置 spring boot 环境和后缀名）
+- 然后，在 mall-product 微服务的 bootstrap.yml 中添加 dataId 的相关配置：
+```yaml
+spring:
+  application:
+    name: mall-product
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        file-extension: yml
+```
+- nacos starter 根据 `spring.application.name`（prefix 默认值为应用名）, `spring.profiles.active` 和 `spring.cloud.nacos.config.file-extension` 确定 dataId 为 mall-product-dev.yml，namespace 和 group 采用默认值，之后去 127.0.0.1:8848 找到命名空间为 public，分组等于 DEFAULT_GROUP，dataId 为 mall-product.yml 和 mall-product-dev.yml 两个配置文件，并作为本次应用配置。
+
+### nacos-client 寻找配置文件原则验证
+
+
+根据前面描述的原则，我们的 mall-coupon 服务在连接 nacos 后读取的配置为 DEFAULT_GROUP 组下的 mall-coupon.yml。
 
 
 我们使用下列步骤验证不带多环境的 dataId 寻找原则：
-- 过添加一个 group=t_g，dataId = ada.yaml 配置文件进行
+- 添加一个 group=t_g，dataId = ada.yaml 配置文件进行
 - 并修改端口为 7001
 - 之后修改 bootstrap.yml 配置
 - 重启服务，观察启动端口是否变化
