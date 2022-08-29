@@ -8,3 +8,13 @@ spring:
       config:
         server-addr: 127.0.0.1:8848
         file-extension: yml
+        shared-configs:
+          - data-id: common-dao.yml
+            refresh: true
+          - data-id: common-component.yml
+            refresh: true
+          - data-id: common-data.yml
+            refresh: true
+        extension-configs:
+          - data-id: ext-data.yml
+            refresh: true
