@@ -13,8 +13,3 @@ spring:
             refresh: true
           - data-id: common-component.yml
             refresh: true
-          - data-id: common-data.yml
-            refresh: true
-        extension-configs:
-          - data-id: ext-data.yml
-            refresh: true

@@ -18,6 +18,7 @@
     <module>mall-admin</module>
     <module>mall-common</module>
     <module>mall-generator</module>
+    <module>mall-gateway</module>
   </modules>
 
   <properties>
