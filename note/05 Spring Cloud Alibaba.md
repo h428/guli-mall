@@ -45,33 +45,5 @@ Spring Cloud Alibaba  的优势：
 - 2.0.x 版本适用于 Spring Boot 2.0.x
 - 2.1.x 版本适用于 Spring Boot 2.1.x
 
-我们本次选择的版本为：Spring Boot: 2.1.13.RELEASE, Spring Cloud:Greenwich.SR6, Spring Cloud Alibaba:2.1.4.RELEASE
-
-```xml
-<dependencyManagement>
-  <dependencies>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-dependencies</artifactId>
-      <version>2.1.13.RELEASE</version>
-      <type>pom</type>
-      <scope>import</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-dependencies</artifactId>
-      <version>Greenwich.SR6</version>
-      <type>pom</type>
-      <scope>import</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.alibaba.cloud</groupId>
-      <artifactId>spring-cloud-alibaba-dependencies</artifactId>
-      <version>2.1.4.RELEASE</version>
-      <type>pom</type>
-      <scope>import</scope>
-    </dependency>
-  </dependencies>
-</dependencyManagement>
-```
+前面在搭建项目时，已经确定本次工程选择的版本为：Spring Boot: 2.1.13.RELEASE, Spring Cloud:Greenwich.SR6, Spring Cloud Alibaba:2.1.4.RELEASE
 
