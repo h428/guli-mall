@@ -41,6 +41,11 @@ public class CategoryController {
         return R.ok().put("page", page);
     }
 
+    @RequestMapping("/list/tree")
+    // @RequiresPermissions("product:category:list")
+    public R listTree(){
+        return R.ok().put("data", categoryService.listTree());
+    }
 
     /**
      * 信息
@@ -60,7 +65,6 @@ public class CategoryController {
     // @RequiresPermissions("product:category:save")
     public R save(@RequestBody CategoryEntity category){
 		categoryService.save(category);
-
         return R.ok();
     }
 
@@ -81,7 +85,9 @@ public class CategoryController {
     @RequestMapping("/delete")
     // @RequiresPermissions("product:category:delete")
     public R delete(@RequestBody Long[] catIds){
-		categoryService.removeByIds(Arrays.asList(catIds));
+		// categoryService.removeByIds(Arrays.asList(catIds));
+
+        categoryService.removeMenuByIds(Arrays.asList(catIds));
 
         return R.ok();
     }
